@@ -1,0 +1,29 @@
+version: '3.6'
+
+services:
+  smtp_server:
+    build:
+      context: .
+      dockerfile: ./docker/smtp.Dockerfile  # Use your custom Dockerfile
+    container_name: smtp_server
+    restart: always
+    ports:
+      - "1025:1025"  # Local SMTP server
+    volumes:
+      - ./multi_device_ai_agent:/app  # Mount Python SMTP server script
+    command: python /app/smtp_server.py  # Run SMTP server script
+
+  multi_device_ai_agent:
+    image: johncapobianco/multi_device_ai_agent:multi_device_ai_agent
+    container_name: multi_device_ai_agent
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - smtp_server
+    environment:
+      - SMTP_SERVER=smtp_server
+      - SMTP_PORT=1025
