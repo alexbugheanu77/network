@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Device Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+        select, input[type="text"] {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 60%;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .output-section {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .output-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .command {
+            color: #0056b3;
+            font-family: monospace;
+        }
+        .loading {
+            display: none;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Network Device Interface</h1>
+        
+        <div class="input-section">
+            <select id="deviceSelect">
+                {% for device in devices %}
+                <option value="{{ device }}">{{ device }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" id="queryInput" placeholder="Enter your question or command in natural language...">
+            <button onclick="sendQuery()">Send</button>
+        </div>
+
+        <div id="loading" class="loading">Processing request...</div>
+        
+        <div class="output-section">
+            <h3>Latest Response:</h3>
+            <div id="commandOutput" class="output-box">
+                <strong>Command:</strong> <span class="command" id="command"></span>
+            </div>
+            <div id="rawOutput" class="output-box">
+                <strong>Raw Output:</strong>
+                <pre id="raw"></pre>
+            </div>
+            <div id="analysisOutput" class="output-box">
+                <strong>Analysis:</strong>
+                <p id="analysis"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function sendQuery() {
+            const device = document.getElementById('deviceSelect').value;
+            const query = document.getElementById('queryInput').value;
+            
+            if (!query) return;
+            
+            document.getElementById('loading').style.display = 'block';
+            
+            fetch('/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    device: device,
+                    query: query
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('command').textContent = data.command;
+                document.getElementById('raw').textContent = data.raw_output;
+                document.getElementById('analysis').textContent = data.analysis;
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                console.error('Error:', error);
+                alert('Error processing request');
+            });
+        }
+
+        // Allow Enter key to send query
+        document.getElementById('queryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendQuery();
+            }
+        });
+    </script>
+</body>
+</html>
