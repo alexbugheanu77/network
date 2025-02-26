@@ -1,0 +1,47 @@
+/* Additional custom styles can be added here */
+.terminal-prompt {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.terminal-response {
+    color: #00ff00;
+}
+
+.terminal-error {
+    color: #ff0000;
+}
+
+.terminal-warning {
+    color: #ffcc00;
+}
+
+.device-status-online {
+    color: #28a745;
+}
+
+.device-status-offline {
+    color: #dc3545;
+}
+
+.device-status-warning {
+    color: #ffc107;
+}
+
+/* Network topology styling */
+.network-node {
+    fill: #4CAF50;
+    stroke: #2E7D32;
+    stroke-width: 2px;
+}
+
+.network-link {
+    stroke: #9E9E9E;
+    stroke-width: 2px;
+}
+
+.node-label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    text-anchor: middle;
+} 

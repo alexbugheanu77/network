@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Management Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f5f5f5;
+        }
+        .terminal {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .device-card {
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .anomaly-alert {
+            margin-top: 15px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .command-history {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .network-map {
+            height: 300px;
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Network Management Assistant</h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Network Terminal</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="terminal" id="terminal">
+                            <div>Welcome to Network Management Assistant</div>
+                            <div>Type your commands in natural language below</div>
+                            <div>Example: "Show interfaces on router1" or "Configure VLAN 100 on switch1"</div>
+                            <div>---------------------------------------------------</div>
+                        </div>
+                        <div class="command-explanation mt-2 mb-2" id="command-explanation" style="display: none;">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">Command Explanation</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p id="explanation-text"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="anomaly-container"></div>
+                        <form id="command-form">
+                            <div class="input-group">
+                                <input type="text" id="command-input" class="form-control" placeholder="Enter your command in natural language...">
+                                <button class="btn btn-primary" type="submit">Send</button>
+                            </div>
+                        </form>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="show-suggestions">Show Command Suggestions</button>
+                            <div id="suggestions-container" class="mt-2" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Network Map</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="network-map" id="network-map">
+                            <!-- Network topology visualization would go here -->
+                            <div class="text-center">
+                                <img src="https://via.placeholder.com/800x250?text=Network+Topology+Visualization" alt="Network Topology" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Network Devices</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="devices-container">
+                            <!-- Device cards will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Command History</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="command-history" id="command-history">
+                            <!-- Command history will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load devices
+            fetch('/api/devices')
+                .then(response => response.json())
+                .then(devices => {
+                    const devicesContainer = document.getElementById('devices-container');
+                    for (const [deviceId, device] of Object.entries(devices)) {
+                        const deviceCard = document.createElement('div');
+                        deviceCard.className = 'card device-card';
+                        deviceCard.innerHTML = `
+                            <div class="card-body">
+                                <h5 class="card-title">${deviceId}</h5>
+                                <p class="card-text">
+                                    <strong>Type:</strong> ${device.type}<br>
+                                    <strong>Vendor:</strong> ${device.vendor}<br>
+                                    <strong>Model:</strong> ${device.model}<br>
+                                    <strong>IP:</strong> ${device.ip}
+                                </p>
+                                <div class="device-status">
+                                    <span class="badge bg-success">Online</span>
+                                </div>
+                            </div>
+                        `;
+                        devicesContainer.appendChild(deviceCard);
+                    }
+                });
+            
+            // Handle command submission
+            const commandForm = document.getElementById('command-form');
+            const commandInput = document.getElementById('command-input');
+            const terminal = document.getElementById('terminal');
+            const commandHistory = document.getElementById('command-history');
+            const anomalyContainer = document.getElementById('anomaly-container');
+            
+            commandForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const query = commandInput.value.trim();
+                if (!query) return;
+                
+                // Add command to terminal
+                terminal.innerHTML += `<div style="color: #ffffff; margin-top: 10px;">$ ${query}</div>`;
+                terminal.scrollTop = terminal.scrollHeight;
+                
+                // Send command to server
+                fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Display result in terminal
+                    terminal.innerHTML += `<div style="color: #00ff00; white-space: pre-wrap;">${data.result}</div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    
+                    // Add to command history
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'mb-2 p-2 border-bottom';
+                    historyItem.innerHTML = `
+                        <div><strong>${data.timestamp}</strong></div>
+                        <div>${query}</div>
+                        <div><small class="text-muted">Device: ${data.device.vendor} ${data.device.model}</small></div>
+                    `;
+                    commandHistory.appendChild(historyItem);
+                    commandHistory.scrollTop = commandHistory.scrollHeight;
+                    
+                    // Check for anomalies
+                    if (data.anomalies && data.anomalies.length > 0) {
+                        anomalyContainer.innerHTML = '';
+                        data.anomalies.forEach(anomaly => {
+                            const alertClass = anomaly.severity === 'critical' ? 'danger' : 
+                                              anomaly.severity === 'warning' ? 'warning' : 'info';
+                            const alert = document.createElement('div');
+                            alert.className = `alert alert-${alertClass} anomaly-alert`;
+                            alert.innerHTML = `
+                                <strong>${anomaly.severity.toUpperCase()}:</strong> ${anomaly.message} on ${anomaly.device}
+                            `;
+                            anomalyContainer.appendChild(alert);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    terminal.innerHTML += `<div style="color: red;">Error: ${error.message}</div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                });
+                
+                // Clear input
+                commandInput.value = '';
+            });
+        });
+    </script>
+</body>
+</html> 
